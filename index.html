@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>塔羅抽牌</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+            padding: 40px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #764ba2;
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+
+        .description {
+            color: #666;
+            font-size: 1.1rem;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.1rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .result-area {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .result-area.hidden {
+            display: none;
+        }
+
+        .card-name {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #764ba2;
+            margin-bottom: 10px;
+        }
+
+        .card-orientation {
+            font-size: 1.2rem;
+            color: #667eea;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        .card-arcana {
+            font-size: 1rem;
+            color: #888;
+            margin-bottom: 20px;
+            font-style: italic;
+        }
+
+        .card-meaning {
+            font-size: 1.1rem;
+            color: #555;
+            line-height: 1.8;
+            text-align: left;
+            max-width: 500px;
+        }
+
+        .placeholder {
+            color: #999;
+            font-size: 1.2rem;
+            font-style: italic;
+        }
+
+        .error-message {
+            color: #dc3545;
+            font-size: 1.1rem;
+            padding: 20px;
+        }
+
+        @media (max-width: 640px) {
+            .container {
+                padding: 25px;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .description {
+                font-size: 1rem;
+            }
+
+            button {
+                padding: 12px 30px;
+                font-size: 1rem;
+            }
+
+            .card-name {
+                font-size: 1.6rem;
+            }
+
+            .card-orientation {
+                font-size: 1rem;
+            }
+
+            .card-meaning {
+                font-size: 1rem;
+            }
+        }
+
+        .card-animation {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔮 塔羅抽牌</h1>
+            <p class="description">按下按鈕抽一張牌，獲得簡單提示</p>
+        </header>
+        
+        <main>
+            <div class="button-group">
+                <button id="drawBtn" onclick="drawCard()">抽牌</button>
+                <button id="resetBtn" onclick="reset()">再抽一次</button>
+            </div>
+            
+            <div id="resultArea" class="result-area hidden">
+                <div class="placeholder">點擊「抽牌」開始</div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // 塔羅牌庫 - 22張大阿爾克那
+        const deck = [
+            {
+                id: "major-00",
+                name: "愚者 (The Fool)",
+                arcana: "大阿爾克那",
+                suit: null,
+                meaning_upright: "新的開始、冒險精神、保持開放與信任。這是一個充滿可能性的時刻，勇敢地踏出第一步吧！",
+                meaning_reversed: "衝動行事、缺乏準備、逃避責任。建議在行動前多加思考，避免魯莽決定。"
+            },
+            {
+                id: "major-01",
+                name: "魔術師 (The Magician)",
+                arcana: "大阿爾克那",
+                suit: null,
+                meaning_upright: "創造力、技能、資源豐富。你擁有實現目標所需的一切工具，現在就是展現才華的時候。",
+                meaning_reversed: "操縱、缺乏方向、浪費才能。注意不要濫用你的能力，誠實面對自己的動機。"
+            },
+            {
+                id: "major-02",
+                name: "女祭司 (The High Priestess)",
+                arcana: "大阿爾克那",
+                suit: null,
+                meaning_upright: "直覺、內在智慧、神秘知識。傾聽內心的聲音，答案就在你心中。",
+                meaning_reversed: "忽視直覺、秘密、缺乏內省。可能需要更多時間靜下來聆聽內在的聲音。"
+            },
+            {
+                id: "major-03",
+                name: "皇后 (The Empress)",
+                arcana: "大阿爾克那",
+                suit: null,
+                meaning_upright: "豐饒、滋養、創造力。這是收穫與成長的時期，享受生活的豐盛吧！",
+                meaning_reversed: "依賴他人、創意受阻、過度保護。學習獨立並給予自己和他人適當的空間。"
+            },
+            {
+                id: "major-04",
+                name: "皇帝 (The Emperor)",
+                arcana: "大阿爾克那",
+                suit: null,
+                meaning_upright: "權威、結構、掌控力。建立秩序和規則，以穩健的方式達成目標。",
+                meaning_reversed: "專制、僵化、缺乏紀律。過度控制可能帶來反效果，學習彈性與包容。"
+            },
+            {
+                id: "major-05",
+                name: "教皇 (The Hierophant)",
+                arcana: "大阿爾克那",
+                suit: null,
+                meaning_upright: "傳統、教育、精神指引。尋求智慧的建議，遵循經過驗證的方法。",
+                meaning_reversed: "反叛、非傳統、質疑信仰。可能是時候打破常規，找到自己的道路。"
+            },
+            {
+                id: "major-06",
+                name: "戀人 (The Lovers)",
+                arcana: "大阿爾克那",
+                suit: null,
+                meaning_upright: "愛情、和諧、選擇。重要的關係或決定即將到來，跟隨你的心。",
+                meaning_reversed: "不和諧、錯誤選擇、價值觀衝突。需要重新評估關係或決定的方向。"
+            },
+            {
+                id: "major-07",
+                name: "戰車 (The Chariot)",
+                arcana: "大阿爾克那",
+                suit: null,
+                meaning_upright: "勝利、意志力、前進。保持專注和決心，成功就在前方。",
+                meaning_reversed: "失控、缺乏方向、攻擊性。需要重新找回平衡和控制力。"
+            },
+            {
+                id: "major-08",
+                name: "力量 (Strength)",
+                arcana: "大阿爾克那",
+                suit: null,
+                meaning_upright: "內在力量、勇氣、耐心。以溫柔和同情心克服挑戰，真正的力量來自內心。",
+                meaning_reversed: "自我懷疑、缺乏信心、脆弱。相信自己的能力，不要被恐懼控制。"
+            },
+            {
+                id: "major-09",
+                name: "隱者 (The Hermit)",
+                arcana: "大阿爾克那",
+                suit: null,
+                meaning_upright: "內省、尋求真理、孤獨。獨處的時光能帶來深刻的洞察和智慧。",
+                meaning_reversed: "孤立、逃避、迷失。過度隔離可能不健康，尋求適當的支持和連結。"
+            },
+            {
+                id: "major-10",
+                name: "命運之輪 (Wheel of Fortune)",
+                arcana: "大阿爾克那",
+                suit: null,
+                meaning_upright: "變化、命運、好運。生命的循環帶來新機會，順應變化的潮流。",
+                meaning_reversed: "壞運、抗拒改變、失控。接受生命的起伏，從挑戰中學習。"
+            },
+            {
+                id: "major-11",
+                name: "正義 (Justice)",
+                arcana: "大阿爾克那",
+                suit: null,
+                meaning_upright: "公平、真相、法律。因果報應，你的行為會得到相應的結果。",
+                meaning_reversed: "不公、偏見、逃避責任。面對事實，承擔自己的責任。"
+            },
+            {
+                id: "major-12",
+                name: "倒吊人 (The Hanged Man)",
+                arcana: "大阿爾克那",
+                suit: null,
+                meaning_upright: "放手、新觀點、犧牲。從不同角度看待問題，暫停能帶來啟發。",
+                meaning_reversed: "拖延、抗拒、徒勞無功。停止無意義的掙扎，接受當下的處境。"
+            },
+            {
+                id: "major-13",
+                name: "死神 (Death)",
+                arcana: "大阿爾克那",
+                suit: null,
+                meaning_upright: "結束、轉變、新生。舊的必須結束，才能為新的開始騰出空間。",
+                meaning_reversed: "抗拒改變、停滞、恐懼。放下過去，擁抱轉變帶來的可能性。"
+            },
+            {
+                id: "major-14",
+                name: "節制 (Temperance)",
+                arcana: "大阿爾克那",
+                suit: null,
+                meaning_upright: "平衡、節制、和諧。找到中庸之道，整合對立的元素。",
+                meaning_reversed: "失衡、過度、缺乏和諧。需要重新調整生活的各個方面。"
+            },
+            {
+                id: "major-15",
+                name: "惡魔 (The Devil)",
+                arcana: "大阿爾克那",
+                suit: null,
+                meaning_upright: "束縛、誘惑、物質主義。意識到自我設限，你有能力解放自己。",
+                meaning_reversed: "解脫、覺醒、打破束縛。正在擺脫負面模式，重獲自由。"
+            },
+            {
+                id: "major-16",
+                name: "塔 (The Tower)",
+                arcana: "大阿爾克那",
+                suit: null,
+                meaning_upright: "突然改變、破壞、啟示。雖然震撼，但這是必要的清理和重建。",
+                meaning_reversed: "避免災難、恐懼改變、內在動盪。危機可能已過，開始重建的時候。"
+            },
+            {
+                id: "major-17",
+                name: "星星 (The Star)",
+                arcana: "大阿爾克那",
+                suit: null,
+                meaning_upright: "希望、靈感、寧靜。保持信念，美好的未來正在展開。",
+                meaning_reversed: "失去信心、絕望、缺乏目標。重新連結內在的希望和靈感。"
+            },
+            {
+                id: "major-18",
+                name: "月亮 (The Moon)",
+                arcana: "大阿爾克那",
+                suit: null,
+                meaning_upright: "幻覺、恐懼、潛意識。事情可能不如表面所見，相信你的直覺。",
+                meaning_reversed: "釋放恐懼、清晰、真相浮現。困惑正在消散，看清事實的本質。"
+            },
+            {
+                id: "major-19",
+                name: "太陽 (The Sun)",
+                arcana: "大阿爾克那",
+                suit: null,
+                meaning_upright: "喜悅、成功、光明。這是充滿正能量的時期，盡情享受吧！",
+                meaning_reversed: "暫時低落、過度樂觀、延遲。陽光會再次出現，保持耐心。"
+            },
+            {
+                id: "major-20",
+                name: "審判 (Judgement)",
+                arcana: "大阿爾克那",
+                suit: null,
+                meaning_upright: "覺醒、重生、內在呼召。過去的經歷帶來深刻的理解和轉變。",
+                meaning_reversed: "自我懷疑、拒絕反省、錯失良機。誠實評估自己，做出必要的改變。"
+            },
+            {
+                id: "major-21",
+                name: "世界 (The World)",
+                arcana: "大阿爾克那",
+                suit: null,
+                meaning_upright: "完成、成就、整合。一個循環的圓滿結束，準備迎接新的旅程。",
+                meaning_reversed: "未完成、尋求閉合、缺乏成就感。幾乎到達終點，再堅持一下。"
+            }
+        ];
+
+        // 當前抽到的牌
+        let currentCard = null;
+        let currentOrientation = null;
+
+        /**
+         * 隨機抽取一張牌
+         */
+        function drawCard() {
+            // 檢查牌庫
+            if (!deck || deck.length === 0) {
+                displayError('牌庫未載入');
+                return;
+            }
+
+            // 隨機選擇一張牌
+            const randomIndex = Math.floor(Math.random() * deck.length);
+            currentCard = deck[randomIndex];
+
+            // 隨機決定正位或逆位 (50% 機率)
+            currentOrientation = Math.random() < 0.5 ? 'upright' : 'reversed';
+
+            // 顯示結果
+            renderResult(currentCard, currentOrientation);
+        }
+
+        /**
+         * 渲染抽牌結果
+         */
+        function renderResult(card, orientation) {
+            const resultArea = document.getElementById('resultArea');
+            
+            // 檢查卡片資料
+            if (!card) {
+                displayError('找不到牌卡資料');
+                return;
+            }
+
+            // 獲取對應的解釋
+            let meaning = '';
+            if (orientation === 'upright') {
+                meaning = card.meaning_upright || '請以直覺感受這張牌的提醒';
+            } else {
+                meaning = card.meaning_reversed || card.meaning_upright || '請以直覺感受這張牌的提醒';
+            }
+
+            // 構建結果HTML
+            const orientationText = orientation === 'upright' ? '正位' : '逆位';
+            const orientationEmoji = orientation === 'upright' ? '⬆️' : '⬇️';
+            
+            resultArea.innerHTML = `
+                <div class="card-animation">
+                    <div class="card-name">${card.name}</div>
+                    <div class="card-orientation">${orientationEmoji} ${orientationText}</div>
+                    <div class="card-arcana">${card.arcana}</div>
+                    <div class="card-meaning">${meaning}</div>
+                </div>
+            `;
+
+            // 顯示結果區域
+            resultArea.classList.remove('hidden');
+        }
+
+        /**
+         * 顯示錯誤訊息
+         */
+        function displayError(message) {
+            const resultArea = document.getElementById('resultArea');
+            resultArea.innerHTML = `<div class="error-message">${message}</div>`;
+            resultArea.classList.remove('hidden');
+        }
+
+        /**
+         * 重設/再抽一次
+         */
+        function reset() {
+            currentCard = null;
+            currentOrientation = null;
+            
+            const resultArea = document.getElementById('resultArea');
+            resultArea.innerHTML = '<div class="placeholder">點擊「抽牌」開始</div>';
+            resultArea.classList.remove('hidden');
+        }
+
+        // 頁面載入時初始化
+        window.addEventListener('DOMContentLoaded', function() {
+            console.log('塔羅抽牌應用已載入');
+            console.log(`牌庫包含 ${deck.length} 張牌`);
+        });
+    </script>
+</body>
+</html>
