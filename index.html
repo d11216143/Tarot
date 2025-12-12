@@ -390,6 +390,9 @@
         let currentCard = null;
         let currentOrientation = null;
 
+        // 預設提示訊息
+        const DEFAULT_MEANING = '請以直覺感受這張牌的提醒';
+
         /**
          * 隨機抽取一張牌
          */
@@ -426,9 +429,9 @@
             // 獲取對應的解釋
             let meaning = '';
             if (orientation === 'upright') {
-                meaning = card.meaning_upright || '請以直覺感受這張牌的提醒';
+                meaning = card.meaning_upright || DEFAULT_MEANING;
             } else {
-                meaning = card.meaning_reversed || '請以直覺感受這張牌的提醒';
+                meaning = card.meaning_reversed || DEFAULT_MEANING;
             }
 
             // 構建結果HTML
