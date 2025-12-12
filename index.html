@@ -46,6 +46,29 @@
             line-height: 1.6;
         }
 
+        .question-input {
+            width: 100%;
+            padding: 15px 20px;
+            font-size: 1rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        .question-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .question-input::placeholder {
+            color: #999;
+        }
+
         .button-group {
             display: flex;
             gap: 15px;
@@ -96,6 +119,17 @@
 
         .result-area.hidden {
             display: none;
+        }
+
+        .card-question {
+            font-size: 1rem;
+            color: #667eea;
+            margin-bottom: 15px;
+            font-style: italic;
+            padding: 10px 15px;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 10px;
+            border-left: 3px solid #667eea;
         }
 
         .card-name {
@@ -152,9 +186,19 @@
                 font-size: 1rem;
             }
 
+            .question-input {
+                font-size: 0.95rem;
+                padding: 12px 15px;
+                min-height: 50px;
+            }
+
             button {
                 padding: 12px 30px;
                 font-size: 1rem;
+            }
+
+            .card-question {
+                font-size: 0.9rem;
             }
 
             .card-name {
@@ -190,17 +234,19 @@
     <div class="container">
         <header>
             <h1>🔮 塔羅抽牌</h1>
-            <p class="description">按下按鈕抽一張牌，獲得簡單提示</p>
+            <p class="description">輸入你的問題，然後抽一張牌獲得提示</p>
         </header>
         
         <main>
+            <textarea id="questionInput" class="question-input" placeholder="請輸入你想詢問的問題（選填）&#10;例如：我該如何面對目前的困境？"></textarea>
+            
             <div class="button-group">
                 <button id="drawBtn" onclick="drawCard()">抽牌</button>
                 <button id="resetBtn" onclick="reset()">再抽一次</button>
             </div>
             
             <div id="resultArea" class="result-area hidden">
-                <div class="placeholder">點擊「抽牌」開始</div>
+                <div class="placeholder">輸入問題後點擊「抽牌」開始</div>
             </div>
         </main>
     </div>
@@ -389,6 +435,7 @@
         // 當前抽到的牌
         let currentCard = null;
         let currentOrientation = null;
+        let currentQuestion = '';
 
         // 預設提示訊息
         const DEFAULT_MEANING = '請以直覺感受這張牌的提醒';
@@ -403,6 +450,10 @@
                 return;
             }
 
+            // 獲取使用者輸入的問題
+            const questionInput = document.getElementById('questionInput');
+            currentQuestion = questionInput.value.trim();
+
             // 隨機選擇一張牌
             const randomIndex = Math.floor(Math.random() * deck.length);
             currentCard = deck[randomIndex];
@@ -411,13 +462,13 @@
             currentOrientation = Math.random() < 0.5 ? 'upright' : 'reversed';
 
             // 顯示結果
-            renderResult(currentCard, currentOrientation);
+            renderResult(currentCard, currentOrientation, currentQuestion);
         }
 
         /**
          * 渲染抽牌結果
          */
-        function renderResult(card, orientation) {
+        function renderResult(card, orientation, question) {
             const resultArea = document.getElementById('resultArea');
             
             // 檢查卡片資料
@@ -438,8 +489,12 @@
             const orientationText = orientation === 'upright' ? '正位' : '逆位';
             const orientationEmoji = orientation === 'upright' ? '⬆️' : '⬇️';
             
+            // 如果有問題，顯示問題
+            const questionHTML = question ? `<div class="card-question">問題：${question}</div>` : '';
+            
             resultArea.innerHTML = `
                 <div class="card-animation">
+                    ${questionHTML}
                     <div class="card-name">${card.name}</div>
                     <div class="card-orientation">${orientationEmoji} ${orientationText}</div>
                     <div class="card-arcana">${card.arcana}</div>
@@ -466,9 +521,14 @@
         function reset() {
             currentCard = null;
             currentOrientation = null;
+            currentQuestion = '';
+            
+            // 清空問題輸入框
+            const questionInput = document.getElementById('questionInput');
+            questionInput.value = '';
             
             const resultArea = document.getElementById('resultArea');
-            resultArea.innerHTML = '<div class="placeholder">點擊「抽牌」開始</div>';
+            resultArea.innerHTML = '<div class="placeholder">輸入問題後點擊「抽牌」開始</div>';
             resultArea.classList.remove('hidden');
         }
     </script>
