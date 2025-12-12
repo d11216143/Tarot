@@ -428,7 +428,7 @@
             if (orientation === 'upright') {
                 meaning = card.meaning_upright || '請以直覺感受這張牌的提醒';
             } else {
-                meaning = card.meaning_reversed || card.meaning_upright || '請以直覺感受這張牌的提醒';
+                meaning = card.meaning_reversed || '請以直覺感受這張牌的提醒';
             }
 
             // 構建結果HTML
@@ -468,11 +468,6 @@
             resultArea.innerHTML = '<div class="placeholder">點擊「抽牌」開始</div>';
             resultArea.classList.remove('hidden');
         }
-
-        // 頁面載入時初始化
-        window.addEventListener('DOMContentLoaded', function() {
-            // Application initialized
-        });
     </script>
 </body>
 </html>
